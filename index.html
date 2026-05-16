@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FootballIQ — Daily Predictions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  /* ── Reset & tokens ──────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:         #0a0c0f;
+    --surface:    #111318;
+    --card:       #161a22;
+    --border:     rgba(255,255,255,0.07);
+    --accent:     #00e5a0;       /* electric green */
+    --accent2:    #ff6b35;       /* orange for away */
+    --gold:       #ffd700;
+    --text:       #e8ecf0;
+    --muted:      #6b7280;
+    --banker:     #00e5a0;
+    --value:      #60a5fa;
+    --longshot:   #f59e0b;
+
+    --font-head:  'Barlow Condensed', sans-serif;
+    --font-body:  'Barlow', sans-serif;
+    --radius:     10px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Header ──────────────────────────────────────────────────── */
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,12,15,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex; align-items: center; gap: 32px;
+    height: 64px;
+  }
+
+  .logo {
+    font-family: var(--font-head);
+    font-size: 28px; font-weight: 900;
+    letter-spacing: -0.5px;
+    color: var(--text);
+    display: flex; align-items: center; gap: 8px;
+    flex-shrink: 0;
+  }
+  .logo span { color: var(--accent); }
+
+  .date-pill {
+    font-family: var(--font-head);
+    font-weight: 700; font-size: 13px;
+    letter-spacing: 1px; text-transform: uppercase;
+    color: var(--muted);
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    padding: 4px 12px; border-radius: 20px;
+    flex-shrink: 0;
+  }
+
+  .header-stats {
+    display: flex; gap: 20px; margin-left: auto;
+  }
+  .hstat {
+    display: flex; flex-direction: column; align-items: center;
+    font-family: var(--font-head);
+  }
+  .hstat-val { font-size: 22px; font-weight: 900; color: var(--accent); line-height: 1; }
+  .hstat-lbl { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+
+  /* ── Hero ────────────────────────────────────────────────────── */
+  .hero {
+    padding: 52px 24px 36px;
+    max-width: 1200px; margin: 0 auto;
+  }
+  .hero h1 {
+    font-family: var(--font-head);
+    font-size: clamp(42px, 7vw, 80px);
+    font-weight: 900;
+    line-height: 0.92;
+    letter-spacing: -1px;
+    text-transform: uppercase;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+  .hero h1 em { color: var(--accent); font-style: normal; }
+  .hero p { color: var(--muted); font-size: 15px; max-width: 480px; line-height: 1.6; }
+
+  /* ── Controls ────────────────────────────────────────────────── */
+  .controls {
+    max-width: 1200px; margin: 0 auto;
+    padding: 0 24px 28px;
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+  }
+
+  .league-btn {
+    font-family: var(--font-head);
+    font-weight: 700; font-size: 13px;
+    letter-spacing: 0.5px;
+    background: var(--surface);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 7px 16px; border-radius: 6px;
+    cursor: pointer; transition: all 0.18s;
+    text-transform: uppercase;
+  }
+  .league-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.18); }
+  .league-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+
+  .market-filter {
+    margin-left: auto;
+    display: flex; gap: 8px;
+  }
+  .market-btn {
+    font-family: var(--font-head);
+    font-size: 12px; font-weight: 700;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    padding: 6px 14px; border-radius: 6px;
+    background: var(--surface);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    cursor: pointer; transition: all 0.18s;
+  }
+  .market-btn:hover { color: var(--text); }
+  .market-btn.active { background: rgba(0,229,160,0.12); color: var(--accent); border-color: rgba(0,229,160,0.4); }
+
+  /* ── Main layout ─────────────────────────────────────────────── */
+  main {
+    max-width: 1200px; margin: 0 auto;
+    padding: 0 24px 60px;
+  }
+
+  .section-label {
+    font-family: var(--font-head);
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px; margin-top: 32px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-label::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* ── Prediction card ─────────────────────────────────────────── */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s;
+    animation: fadeUp 0.4s ease both;
+  }
+  .card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255,255,255,0.14);
+  }
+
+  @keyframes fadeUp {
+    from { opacity:0; transform: translateY(12px); }
+    to   { opacity:1; transform: translateY(0); }
+  }
+
+  /* Tier accent bar on left */
+  .card[data-tier="BANKER"]    { border-left: 3px solid var(--banker); }
+  .card[data-tier="VALUE PLAY"]{ border-left: 3px solid var(--value); }
+  .card[data-tier="LONGSHOT"]  { border-left: 3px solid var(--longshot); }
+
+  .card-head {
+    padding: 14px 16px 10px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .league-tag {
+    font-family: var(--font-head);
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase;
+    color: var(--muted);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .league-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .kickoff-time {
+    font-family: var(--font-head);
+    font-size: 12px; font-weight: 700;
+    color: var(--muted); letter-spacing: 0.5px;
+  }
+
+  .card-teams {
+    padding: 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .team { display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 1; }
+  .team-logo {
+    width: 36px; height: 36px; object-fit: contain;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
+  }
+  .team-logo-placeholder {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-head); font-size: 11px; font-weight: 700; color: var(--muted);
+  }
+  .team-name {
+    font-family: var(--font-head);
+    font-size: 14px; font-weight: 800;
+    text-transform: uppercase;
+    text-align: center; line-height: 1.1;
+  }
+  .vs-divider {
+    font-family: var(--font-head);
+    font-size: 12px; font-weight: 700;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+
+  /* ── Recommendation banner ───────────────────────────────────── */
+  .rec-banner {
+    margin: 0 16px 14px;
+    background: rgba(0,229,160,0.07);
+    border: 1px solid rgba(0,229,160,0.2);
+    border-radius: 7px;
+    padding: 10px 14px;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  }
+  .card[data-tier="VALUE PLAY"] .rec-banner {
+    background: rgba(96,165,250,0.07);
+    border-color: rgba(96,165,250,0.2);
+  }
+  .card[data-tier="LONGSHOT"] .rec-banner {
+    background: rgba(245,158,11,0.07);
+    border-color: rgba(245,158,11,0.2);
+  }
+
+  .rec-left { display: flex; flex-direction: column; gap: 2px; }
+  .rec-market {
+    font-family: var(--font-head);
+    font-size: 18px; font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--banker);
+  }
+  .card[data-tier="VALUE PLAY"] .rec-market { color: var(--value); }
+  .card[data-tier="LONGSHOT"]   .rec-market { color: var(--longshot); }
+
+  .rec-label {
+    font-size: 12px; color: var(--muted); font-weight: 500;
+  }
+
+  .score-ring {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    border: 2px solid var(--banker);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .card[data-tier="VALUE PLAY"] .score-ring { border-color: var(--value); }
+  .card[data-tier="LONGSHOT"]   .score-ring { border-color: var(--longshot); }
+  .score-num {
+    font-family: var(--font-head);
+    font-size: 20px; font-weight: 900; line-height: 1;
+    color: var(--text);
+  }
+  .score-lbl { font-size: 8px; font-weight: 700; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; }
+
+  /* ── Odds chip ───────────────────────────────────────────────── */
+  .odds-row {
+    padding: 0 16px 14px;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .odds-chip {
+    font-family: var(--font-head);
+    font-size: 13px; font-weight: 700;
+    background: rgba(255,215,0,0.1);
+    color: var(--gold);
+    border: 1px solid rgba(255,215,0,0.25);
+    padding: 4px 12px; border-radius: 5px;
+  }
+  .tier-chip {
+    font-family: var(--font-head);
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 5px;
+  }
+  .tier-BANKER     { background: rgba(0,229,160,0.12); color: var(--banker); }
+  .tier-VALUE\ PLAY { background: rgba(96,165,250,0.12); color: var(--value); }
+  .tier-LONGSHOT   { background: rgba(245,158,11,0.12); color: var(--longshot); }
+
+  /* ── Stats row ───────────────────────────────────────────────── */
+  .stats-row {
+    display: flex;
+    border-top: 1px solid var(--border);
+  }
+  .stat-cell {
+    flex: 1;
+    padding: 10px 8px;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    border-right: 1px solid var(--border);
+    font-size: 11px;
+  }
+  .stat-cell:last-child { border-right: none; }
+  .stat-val {
+    font-family: var(--font-head);
+    font-size: 15px; font-weight: 800;
+    color: var(--text);
+  }
+  .stat-lbl {
+    font-size: 9px; font-weight: 600;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    color: var(--muted); text-align: center; line-height: 1.2;
+  }
+
+  /* ── Other markets mini-row ──────────────────────────────────── */
+  .other-markets {
+    border-top: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex; gap: 6px; flex-wrap: wrap;
+  }
+  .mini-market {
+    font-size: 11px;
+    font-family: var(--font-head);
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    padding: 3px 9px; border-radius: 4px;
+    background: rgba(255,255,255,0.04);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .mini-market.hot { color: var(--accent); border-color: rgba(0,229,160,0.3); background: rgba(0,229,160,0.06); }
+
+  /* ── Empty / loading states ──────────────────────────────────── */
+  .state-msg {
+    text-align: center; padding: 60px 20px;
+    font-family: var(--font-head);
+    font-size: 18px; color: var(--muted);
+    letter-spacing: 0.5px;
+  }
+  .spinner {
+    display: inline-block;
+    width: 32px; height: 32px;
+    border: 3px solid rgba(0,229,160,0.15);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error-box {
+    background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.2);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    color: #ef4444;
+    font-family: var(--font-head);
+    font-size: 15px; font-weight: 600;
+    max-width: 500px; margin: 40px auto;
+    text-align: center;
+  }
+
+  /* ── Responsive ──────────────────────────────────────────────── */
+  @media (max-width: 640px) {
+    header { padding: 0 16px; gap: 12px; }
+    .header-stats { gap: 14px; }
+    .hstat-val { font-size: 18px; }
+    .hero { padding: 32px 16px 20px; }
+    .controls { padding: 0 16px 20px; }
+    main { padding: 0 16px 40px; }
+    .cards-grid { grid-template-columns: 1fr; }
+    .market-filter { margin-left: 0; width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Football<span>IQ</span></div>
+  <div class="date-pill" id="datePill">—</div>
+  <div class="header-stats">
+    <div class="hstat"><span class="hstat-val" id="hBankers">—</span><span class="hstat-lbl">Bankers</span></div>
+    <div class="hstat"><span class="hstat-val" id="hValue">—</span><span class="hstat-lbl">Value</span></div>
+    <div class="hstat"><span class="hstat-val" id="hTotal">—</span><span class="hstat-lbl">Tips</span></div>
+  </div>
+</header>
+
+<section class="hero">
+  <h1>Today's<br/><em>Predictions</em></h1>
+  <p>AI-powered match analysis across Europe's top leagues. Scored on form, head-to-head, and statistical models.</p>
+</section>
+
+<div class="controls">
+  <button class="league-btn active" data-league="ALL">All</button>
+  <button class="league-btn" data-league="Premier League">Premier League</button>
+  <button class="league-btn" data-league="Championship">Championship</button>
+  <button class="league-btn" data-league="League 1">League 1</button>
+  <button class="league-btn" data-league="League 2">League 2</button>
+
+  <div class="market-filter">
+    <button class="market-btn active" data-market="ALL">All markets</button>
+    <button class="market-btn" data-market="BTTS">BTTS</button>
+    <button class="market-btn" data-market="OVER25">Over 2.5</button>
+    <button class="market-btn" data-market="HOME_WIN">Home Win</button>
+    <button class="market-btn" data-market="AWAY_WIN">Away Win</button>
+    <button class="market-btn" data-market="DRAW">Draw</button>
+  </div>
+</div>
+
+<main id="main">
+  <div class="state-msg">
+    <div class="spinner"></div><br/>Loading predictions…
+  </div>
+</main>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let allPredictions = [];
+let activeLeague   = "ALL";
+let activeMarket   = "ALL";
+
+// ── Fetch ─────────────────────────────────────────────────────────────────────
+async function loadPredictions() {
+  try {
+    const res  = await fetch("/.netlify/functions/football-predictions");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    allPredictions = data.predictions || [];
+
+    // Header stats
+    document.getElementById("hBankers").textContent = data.bankers_count    ?? 0;
+    document.getElementById("hValue"  ).textContent = data.value_plays_count ?? 0;
+    document.getElementById("hTotal"  ).textContent = data.total_fixtures    ?? 0;
+
+    // Date pill
+    if (data.date) {
+      const d = new Date(data.date);
+      document.getElementById("datePill").textContent =
+        d.toLocaleDateString("en-GB", { weekday:"short", day:"numeric", month:"short" }).toUpperCase();
+    }
+
+    render();
+  } catch (err) {
+    document.getElementById("main").innerHTML =
+      `<div class="error-box">⚠️ Could not load predictions.<br/><small>${err.message}</small></div>`;
+  }
+}
+
+// ── Filter & render ───────────────────────────────────────────────────────────
+function render() {
+  let filtered = allPredictions.filter((p) => {
+    const leagueOk = activeLeague === "ALL" || p.league === activeLeague;
+    const marketOk = activeMarket === "ALL" || p.topMarket?.market === activeMarket;
+    return leagueOk && marketOk;
+  });
+
+  const main = document.getElementById("main");
+
+  if (filtered.length === 0) {
+    main.innerHTML = `<div class="state-msg">No predictions match your filters today.</div>`;
+    return;
+  }
+
+  // Group by tier
+  const bankers    = filtered.filter((p) => p.topMarket?.tier === "BANKER");
+  const valuePlays = filtered.filter((p) => p.topMarket?.tier === "VALUE PLAY");
+  const longshots  = filtered.filter((p) => p.topMarket?.tier === "LONGSHOT");
+
+  let html = "";
+
+  if (bankers.length) {
+    html += `<div class="section-label">⭐ Bankers (${bankers.length})</div>`;
+    html += `<div class="cards-grid">${bankers.map(cardHTML).join("")}</div>`;
+  }
+  if (valuePlays.length) {
+    html += `<div class="section-label">💡 Value Plays (${valuePlays.length})</div>`;
+    html += `<div class="cards-grid">${valuePlays.map(cardHTML).join("")}</div>`;
+  }
+  if (longshots.length) {
+    html += `<div class="section-label">🎯 Longshots (${longshots.length})</div>`;
+    html += `<div class="cards-grid">${longshots.map(cardHTML).join("")}</div>`;
+  }
+
+  main.innerHTML = html;
+}
+
+// ── Card builder ──────────────────────────────────────────────────────────────
+const MARKET_LABELS = {
+  BTTS:     "Both Teams to Score",
+  OVER25:   "Over 2.5 Goals",
+  HOME_WIN: "Home Win",
+  AWAY_WIN: "Away Win",
+  DRAW:     "Draw",
+};
+
+function cardHTML(p) {
+  const tier     = p.topMarket?.tier    || "";
+  const market   = p.topMarket?.market  || "";
+  const score    = p.topMarket?.score   ?? 0;
+  const label    = p.topMarket?.label   || "";
+  const odds     = p.topMarket?.odds;
+  const ks       = p.keyStats || {};
+
+  const kickoff  = p.kickoff ? new Date(p.kickoff).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}) : "";
+
+  const homeLogo = p.home?.logo
+    ? `<img class="team-logo" src="${p.home.logo}" alt="" loading="lazy" onerror="this.style.display='none'">`
+    : `<div class="team-logo-placeholder">${(p.home?.name||"?")[0]}</div>`;
+  const awayLogo = p.away?.logo
+    ? `<img class="team-logo" src="${p.away.logo}" alt="" loading="lazy" onerror="this.style.display='none'">`
+    : `<div class="team-logo-placeholder">${(p.away?.name||"?")[0]}</div>`;
+
+  const oddsChip = odds ? `<div class="odds-chip">@ ${odds}</div>` : "";
+  const tierChip = `<div class="tier-chip tier-${tier}">${label}</div>`;
+
+  // Other markets (not the top one, score ≥55)
+  const otherMarkets = (p.allMarkets || [])
+    .filter((m) => m.market !== market)
+    .slice(0, 4)
+    .map((m) => `<span class="mini-market${m.score >= 70 ? " hot" : ""}">${MARKET_LABELS[m.market] || m.market} · ${m.score}</span>`)
+    .join("");
+
+  return `
+<div class="card" data-tier="${tier}">
+  <div class="card-head">
+    <div class="league-tag"><div class="league-dot"></div>${p.league || ""}</div>
+    <div class="kickoff-time">${kickoff}</div>
+  </div>
+
+  <div class="card-teams">
+    <div class="team">
+      ${homeLogo}
+      <div class="team-name">${esc(p.home?.name || "Home")}</div>
+    </div>
+    <div class="vs-divider">vs</div>
+    <div class="team">
+      ${awayLogo}
+      <div class="team-name">${esc(p.away?.name || "Away")}</div>
+    </div>
+  </div>
+
+  <div class="rec-banner">
+    <div class="rec-left">
+      <div class="rec-market">${MARKET_LABELS[market] || market}</div>
+      <div class="rec-label">${p.topMarket?.description || ""}</div>
+    </div>
+    <div class="score-ring">
+      <div class="score-num">${score}</div>
+      <div class="score-lbl">Score</div>
+    </div>
+  </div>
+
+  <div class="odds-row">
+    ${oddsChip}
+    ${tierChip}
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-cell">
+      <div class="stat-val">${fmtGoals(ks.homeGoalsPerGame)}</div>
+      <div class="stat-lbl">Home<br/>Scored/G</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-val">${fmtGoals(ks.awayGoalsPerGame)}</div>
+      <div class="stat-lbl">Away<br/>Scored/G</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-val">${fmtPct(ks.homeBTTSRate)}%</div>
+      <div class="stat-lbl">Home<br/>BTTS</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-val">${ks.h2hGames ?? 0}</div>
+      <div class="stat-lbl">H2H<br/>Games</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-val">${fmtGoals(ks.h2hAvgGoals)}</div>
+      <div class="stat-lbl">H2H<br/>Avg Gls</div>
+    </div>
+  </div>
+
+  ${otherMarkets ? `<div class="other-markets">${otherMarkets}</div>` : ""}
+</div>`;
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+function fmtGoals(n)  { return n != null ? Number(n).toFixed(2) : "—"; }
+function fmtPct(n)    { return n != null ? Number(n).toFixed(0) : "—"; }
+
+// ── Controls ──────────────────────────────────────────────────────────────────
+document.querySelectorAll(".league-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".league-btn").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    activeLeague = btn.dataset.league;
+    render();
+  });
+});
+
+document.querySelectorAll(".market-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".market-btn").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    activeMarket = btn.dataset.market;
+    render();
+  });
+});
+
+// ── Demo mode: inject mock data when no API available ─────────────────────────
+function loadDemoData() {
+  const leagues   = ["Premier League","Championship","League 1","League 2"];
+  const markets   = ["BTTS","OVER25","HOME_WIN","AWAY_WIN","DRAW"];
+  const tiers     = ["BANKER","VALUE PLAY","LONGSHOT"];
+  const teams = [
+    ["Arsenal","Chelsea"],["Man City","Liverpool"],["Tottenham","Newcastle"],
+    ["Man United","Everton"],["Leeds","Sheffield Utd"],["Middlesbrough","Sunderland"],
+    ["Burnley","West Brom"],["Norwich","Coventry"],["Bolton","Peterborough"],
+    ["Plymouth","Oxford Utd"],["Wigan","Fleetwood"],["Grimsby","Salford"],
+  ];
+
+  const MARKET_LABELS_ARR = {
+    BTTS:"Both Teams to Score",OVER25:"Over 2.5 Goals",
+    HOME_WIN:"Home Win",AWAY_WIN:"Away Win",DRAW:"Draw"
+  };
+  const TIER_LABELS = { "BANKER":"⭐ Banker","VALUE PLAY":"💡 Value Play","LONGSHOT":"🎯 Longshot" };
+  const TIER_DESC   = { "BANKER":"High confidence — lead pick of the day.","VALUE PLAY":"Good value — ideal for accumulators.","LONGSHOT":"Speculative — keep stakes small." };
+
+  const predictions = teams.map(([home, away], i) => {
+    const score  = 55 + Math.floor(Math.random() * 35);
+    const tier   = score >= 80 ? "BANKER" : score >= 68 ? "VALUE PLAY" : "LONGSHOT";
+    const market = markets[i % markets.length];
+    const league = leagues[i % leagues.length];
+    const hour   = 12 + (i % 8);
+
+    const allMarkets = markets.map((m) => {
+      const s = 50 + Math.floor(Math.random() * 35);
+      return { market:m, score:s, tier: s>=80?"BANKER":s>=68?"VALUE PLAY":"LONGSHOT",
+               label: TIER_LABELS[s>=80?"BANKER":s>=68?"VALUE PLAY":"LONGSHOT"],
+               description: TIER_DESC[s>=80?"BANKER":s>=68?"VALUE PLAY":"LONGSHOT"] };
+    }).sort((a,b) => b.score - a.score);
+
+    return {
+      fixture_id: i + 1,
+      kickoff: `2026-05-16T${String(hour).padStart(2,"0")}:00:00+01:00`,
+      league,
+      home: { name: home, logo: "" },
+      away: { name: away, logo: "" },
+      topMarket: {
+        market, score, tier,
+        label: TIER_LABELS[tier],
+        description: TIER_DESC[tier],
+        odds: (1.4 + Math.random() * 2.5).toFixed(2),
+      },
+      allMarkets,
+      keyStats: {
+        homeGoalsPerGame:   (0.8 + Math.random() * 1.5).toFixed(2),
+        awayGoalsPerGame:   (0.8 + Math.random() * 1.5).toFixed(2),
+        homeBTTSRate:       Math.floor(30 + Math.random() * 50),
+        awayBTTSRate:       Math.floor(30 + Math.random() * 50),
+        h2hGames:           Math.floor(4 + Math.random() * 8),
+        h2hAvgGoals:        (1.5 + Math.random() * 2.5).toFixed(2),
+        h2hBTTSRate:        Math.floor(30 + Math.random() * 50),
+        h2hHomeWinRate:     Math.floor(20 + Math.random() * 50),
+        h2hAwayWinRate:     Math.floor(20 + Math.random() * 50),
+      },
+    };
+  });
+
+  allPredictions = predictions;
+
+  const bankers  = predictions.filter((p) => p.topMarket.tier === "BANKER").length;
+  const valuePl  = predictions.filter((p) => p.topMarket.tier === "VALUE PLAY").length;
+
+  document.getElementById("hBankers").textContent = bankers;
+  document.getElementById("hValue"  ).textContent = valuePl;
+  document.getElementById("hTotal"  ).textContent = predictions.length;
+  document.getElementById("datePill").textContent = "SAT 16 MAY";
+
+  render();
+}
+
+// Try real API first, fall back to demo
+loadPredictions().catch(() => loadDemoData());
+loadDemoData(); // comment this out when real API is connected
+</script>
+</body>
+</html>
