@@ -705,7 +705,7 @@ function loadDemoData() {
 
 // Try real API first, fall back to demo
 loadPredictions().catch(() => loadDemoData());
-loadDemoData(); // comment this out when real API is connected
+// loadDemoData(); // disabled so live Netlify function data loads properly
 </script>
 </body>
 </html>
